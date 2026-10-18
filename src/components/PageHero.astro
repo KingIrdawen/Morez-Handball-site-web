@@ -1,0 +1,36 @@
+---
+import type { ImageMetadata } from 'astro'
+import { Image } from 'astro:assets'
+import Icon from './Icon.astro'
+
+// Bandeau en haut des pages intérieures : photo assombrie, sur-titre doré, grand titre
+interface Props {
+  image: ImageMetadata
+  eyebrow?: string
+  title: string
+  highlight?: string // seconde ligne du titre, en doré
+  intro?: string
+  back?: { href: string; label: string }
+  center?: boolean
+  rule?: boolean // filet doré sous le titre
+}
+const { image, eyebrow, title, highlight, intro, back, center = false, rule = true } = Astro.props
+---
+<section class="relative isolate overflow-hidden border-b border-border">
+  <Image src={image} alt="" widths={[800, 1600, 2400]} sizes="100vw" class="absolute inset-0 -z-10 h-full w-full object-cover opacity-30" loading="eager" />
+  <div class="absolute inset-0 -z-10 bg-gradient-to-t from-background via-background/80 to-background/40"></div>
+  <div class:list={['mx-auto max-w-7xl px-4 py-24 sm:px-6 md:py-28', center && 'text-center']}>
+    {back && (
+      <a href={back.href} class="mb-6 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-gold">
+        <Icon name="arrow-left" class="h-3.5 w-3.5" />{back.label}
+      </a>
+    )}
+    {eyebrow && <p class="text-xs font-semibold uppercase tracking-[0.4em] text-gold">{eyebrow}</p>}
+    <h1 class="mt-3 text-5xl uppercase leading-[0.95] sm:text-6xl">
+      {title}{highlight && <><br /><span class="text-gold">{highlight}</span></>}
+    </h1>
+    {rule && <div class:list={['gold-rule mt-6 w-32', center && 'mx-auto']}></div>}
+    {intro && <p class:list={['mt-6 max-w-2xl text-lg text-muted-foreground', center && 'mx-auto']}>{intro}</p>}
+    <slot />
+  </div>
+</section>

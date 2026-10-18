@@ -1,0 +1,29 @@
+---
+import { Image } from 'astro:assets'
+import { partners } from '@/data/partners'
+
+// `named` : affiche le nom sous chaque logo (page Partenaires)
+interface Props { named?: boolean }
+const { named = false } = Astro.props
+---
+<div class:list={['grid gap-3', named ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5' : 'grid-cols-2 sm:grid-cols-3']}>
+  {partners.map(p => {
+    const Tag = p.url ? 'a' : 'article'
+    return (
+      <Tag
+        href={p.url}
+        target={p.url ? '_blank' : undefined}
+        rel={p.url ? 'noopener' : undefined}
+        class="group relative isolate overflow-hidden border border-border bg-card/60 transition duration-300 hover:-translate-y-1 hover:border-gold/45 motion-reduce:transform-none"
+      >
+        <div class="relative flex aspect-[4/3] items-center justify-center p-3 sm:p-5">
+          <div class="flex h-full w-full items-center justify-center bg-foreground p-3 sm:p-6">
+            <Image src={p.logo} alt={`Logo ${p.name}`} width={400} class="h-full max-h-36 w-full object-contain transition-transform duration-300 group-hover:scale-[1.025] motion-reduce:transform-none" />
+          </div>
+        </div>
+        {named && <p class="border-t border-border px-4 py-4 text-center font-display text-xl uppercase">{p.name}</p>}
+        <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-gold/10 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+      </Tag>
+    )
+  })}
+</div>

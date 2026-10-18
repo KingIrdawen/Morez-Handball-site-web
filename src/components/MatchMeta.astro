@@ -1,0 +1,17 @@
+---
+import Icon from './Icon.astro'
+import { formatDate, type Match } from '@/data/matches'
+
+interface Props { match: Match }
+const { match } = Astro.props
+---
+{match.date ? (
+  <div class="flex flex-wrap gap-4 text-xs text-muted-foreground">
+    <span class="flex items-center gap-1.5"><Icon name="calendar" class="h-3.5 w-3.5 text-gold" />{formatDate(match.date)}</span>
+    {match.time && <span class="flex items-center gap-1.5"><Icon name="clock" class="h-3.5 w-3.5 text-gold" />{match.time}</span>}
+  </div>
+) : (
+  <p class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.25em] text-gold">
+    <Icon name="calendar" class="h-3.5 w-3.5" />Date à venir
+  </p>
+)}

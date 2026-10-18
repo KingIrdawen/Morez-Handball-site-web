@@ -1,0 +1,138 @@
+---
+import { Image } from 'astro:assets'
+import { getCollection } from 'astro:content'
+import Layout from '@/layouts/Layout.astro'
+import Icon from '@/components/Icon.astro'
+import SectionTitle from '@/components/SectionTitle.astro'
+import StatsBand from '@/components/StatsBand.astro'
+import MatchFeature from '@/components/MatchFeature.astro'
+import MatchCard from '@/components/MatchCard.astro'
+import TeamCard from '@/components/TeamCard.astro'
+import NewsCard from '@/components/NewsCard.astro'
+import PlayerCarousel from '@/components/PlayerCarousel.astro'
+import AlbumCard from '@/components/AlbumCard.astro'
+import PartnerGrid from '@/components/PartnerGrid.astro'
+import logo from '@/assets/club/logo.jpg'
+import rejoindre from '@/assets/club/rejoindre.jpg'
+import { club } from '@/data/site'
+import { teams } from '@/data/teams'
+import { seniorPlayers } from '@/data/players'
+import { lastResult, nextMatch } from '@/data/matches'
+import { albums } from '@/data/albums'
+
+const hero = teams[0].image
+const babyHand = teams.find(t => t.slug === 'baby-hand')!
+const babyHandPhoto = teams.find(t => t.slug === 'moins-de-11')!.image
+const news = (await getCollection('actualites')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 3)
+const latestAlbum = albums[0]
+---
+<Layout>
+  <!-- Bandeau principal -->
+  <section class="relative isolate overflow-hidden">
+    <Image src={hero} alt="Joueur de Morez Handball en suspension devant la cage adverse" widths={[800, 1600, 2400]} sizes="100vw" loading="eager" fetchpriority="high" class="absolute inset-0 -z-10 h-full w-full object-cover" />
+    <div class="absolute inset-0 -z-10 bg-gradient-to-t from-background via-background/85 to-background/50"></div>
+    <div class="mx-auto flex min-h-[88vh] max-w-7xl flex-col justify-end px-4 pt-24 pb-16 sm:px-6">
+      <Image src={logo} alt="" width={192} height={192} class="h-24 w-24" loading="eager" />
+      <p class="mt-6 text-xs font-semibold uppercase tracking-[0.4em] text-gold">{club.fullName} · {club.department}</p>
+      <h1 class="mt-4 max-w-4xl text-5xl uppercase leading-[0.88] sm:text-7xl lg:text-8xl">Morez<br /><span class="text-gold">Handball</span></h1>
+      <p class="mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">Vitesse du lynx, force du collectif. Du Baby Hand aux seniors, on forme des joueurs et on construit une famille au gymnase de Morez.</p>
+      <div class="mt-9 flex flex-wrap gap-3">
+        <a href="/rejoindre/" class="inline-flex items-center gap-2 bg-gold px-7 py-4 font-bold uppercase tracking-wide text-ink transition-transform hover:-translate-y-0.5">Rejoindre le club <Icon name="arrow-right" /></a>
+        <a href="/matchs/" class="inline-flex items-center gap-2 border border-gold/50 px-7 py-4 font-bold uppercase tracking-wide text-gold transition-colors hover:bg-gold/10">Voir les matchs</a>
+      </div>
+    </div>
+  </section>
+
+  <StatsBand />
+
+  <!-- Prochain match et dernier résultat -->
+  <section class="mx-auto grid max-w-7xl gap-8 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-[1.1fr_1fr]">
+    {nextMatch && <MatchFeature match={nextMatch} label="Prochain match" />}
+    {lastResult && (
+      <div>
+        <SectionTitle eyebrow={`Journée ${lastResult.round}`} title="Dernier résultat" />
+        <MatchCard match={lastResult} />
+        <a href="/matchs/" class="mt-6 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gold">Tout le calendrier <Icon name="arrow-right" /></a>
+      </div>
+    )}
+  </section>
+
+  <!-- Équipes -->
+  <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
+    <SectionTitle eyebrow="Six groupes" title="Nos équipes" />
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {teams.map(team => <TeamCard team={team} />)}
+    </div>
+  </section>
+
+  <!-- Actualités -->
+  <section class="border-y border-border bg-ink/60">
+    <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
+      <SectionTitle eyebrow="La vie du club" title="Actualités" />
+      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {news.map(article => <NewsCard article={article} />)}
+      </div>
+      <a href="/actualites/" class="mt-8 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gold">Toutes les actualités <Icon name="arrow-right" /></a>
+    </div>
+  </section>
+
+  <!-- Effectif seniors -->
+  <section class="overflow-hidden border-b border-border bg-ink py-16 md:py-24">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6">
+      <SectionTitle eyebrow="Vos joueurs" title="Seniors" />
+      <p class="-mt-5 mb-8 max-w-xl text-muted-foreground">Découvrez les visages qui défendent les couleurs de Morez.</p>
+    </div>
+    <PlayerCarousel players={seniorPlayers} label="Effectif Seniors Masculins" />
+  </section>
+
+  <!-- Galerie -->
+  {latestAlbum && (
+    <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
+      <SectionTitle eyebrow="Morez Handball" title="Au cœur du club" />
+      <p class="-mt-5 mb-8 max-w-xl text-muted-foreground">Les albums photo du club, saison par saison.</p>
+      <AlbumCard album={latestAlbum} wide />
+      <a href="/galerie/" class="mt-8 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gold">Voir tous les albums <Icon name="arrow-right" /></a>
+    </section>
+  )}
+
+  <!-- Partenaires -->
+  <section class="border-y border-border bg-ink">
+    <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-20">
+      <div class="mb-9 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <SectionTitle eyebrow="Ils jouent avec nous" title="Nos partenaires" class="" />
+        <a href="/partenaires/" class="inline-flex items-center gap-2 pb-2 text-sm font-bold uppercase tracking-wide text-gold">Tous nos partenaires <Icon name="arrow-right" /></a>
+      </div>
+      <PartnerGrid />
+    </div>
+  </section>
+
+  <!-- Baby Hand -->
+  <section class="border-b border-border bg-ink">
+    <div class="mx-auto grid max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 md:py-20">
+      <Image src={babyHandPhoto} alt="Séance encadrée au gymnase de Morez" widths={[640, 1200]} sizes="(min-width: 768px) 50vw, 100vw" class="border border-gold/20 object-cover" />
+      <div>
+        <Icon name="baby" class="h-8 w-8 text-gold" />
+        <h2 class="mt-4 text-4xl uppercase">Baby Hand · 3 à 5 ans</h2>
+        <div class="gold-rule mt-4 w-20"></div>
+        <p class="mt-5 text-muted-foreground">Une heure de jeu le samedi matin : parcours moteurs, ballons de toutes tailles, jeux coopératifs. Aucune compétition, que du plaisir — et les parents peuvent participer.</p>
+        <p class="mt-3 text-sm uppercase tracking-wide text-gold">Samedi 9h – 10h · {club.venue} · 16 places</p>
+        <a href={`/equipes/${babyHand.slug}/`} class="mt-7 inline-flex items-center gap-2 bg-gold px-6 py-3 font-bold uppercase tracking-wide text-ink transition-transform hover:-translate-y-0.5">Découvrir le Baby Hand <Icon name="arrow-right" /></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Rejoindre -->
+  <section class="relative isolate overflow-hidden">
+    <Image src={rejoindre} alt="" widths={[800, 1600]} sizes="100vw" class="absolute inset-0 -z-10 h-full w-full object-cover opacity-25" />
+    <div class="absolute inset-0 -z-10 bg-gradient-to-r from-background via-background/85 to-background/40"></div>
+    <div class="mx-auto max-w-7xl px-4 py-20 sm:px-6 md:py-28">
+      <p class="text-xs font-semibold uppercase tracking-[0.4em] text-gold">Saison {club.registrationSeason}</p>
+      <h2 class="mt-4 max-w-2xl text-4xl uppercase leading-none sm:text-6xl">Rejoignez Morez Handball</h2>
+      <p class="mt-5 max-w-xl text-muted-foreground">Envie de découvrir le handball ou de rejoindre Morez ? Contactez-nous pour obtenir toutes les informations concernant votre catégorie.</p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a href="/rejoindre/" class="inline-flex items-center gap-2 bg-gold px-7 py-4 font-bold uppercase tracking-wide text-ink transition-transform hover:-translate-y-0.5">S'inscrire maintenant <Icon name="arrow-right" /></a>
+        <a href="/contact/" class="inline-flex items-center gap-2 border border-gold/50 px-7 py-4 font-bold uppercase tracking-wide text-gold transition-colors hover:bg-gold/10">Poser une question</a>
+      </div>
+    </div>
+  </section>
+</Layout>

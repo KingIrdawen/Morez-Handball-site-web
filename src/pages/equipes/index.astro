@@ -1,0 +1,19 @@
+---
+import Layout from '@/layouts/Layout.astro'
+import PageHero from '@/components/PageHero.astro'
+import TeamCard from '@/components/TeamCard.astro'
+import { teams } from '@/data/teams'
+---
+<Layout title="Nos équipes" description="Les équipes de Morez Handball, du Baby Hand aux seniors : années de naissance, créneaux et encadrement.">
+  <PageHero
+    image={teams.find(t => t.slug === 'moins-de-18')!.image}
+    eyebrow="Du Baby Hand aux seniors"
+    title="Nos équipes"
+    intro="Six groupes, un même gymnase et une même façon de jouer : vite, ensemble, et avec le sourire."
+  />
+  <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {teams.map(team => <TeamCard team={team} detailed />)}
+    </div>
+  </section>
+</Layout>

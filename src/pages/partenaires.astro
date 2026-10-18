@@ -1,0 +1,29 @@
+---
+import Layout from '@/layouts/Layout.astro'
+import PageHero from '@/components/PageHero.astro'
+import SectionTitle from '@/components/SectionTitle.astro'
+import PartnerGrid from '@/components/PartnerGrid.astro'
+import Icon from '@/components/Icon.astro'
+import heroImage from '@/assets/equipes/seniors.jpg'
+---
+<Layout title="Partenaires" description="Les entreprises et structures qui accompagnent Morez Handball au quotidien.">
+  <PageHero image={heroImage} eyebrow="Nos partenaires" title="Ils jouent" highlight="avec nous" center>
+    <p class="mx-auto mt-6 max-w-xl text-muted-foreground">Le développement du Morez Handball est aussi rendu possible grâce au soutien de ses partenaires.</p>
+    <p class="mx-auto mt-3 max-w-xl text-muted-foreground">Merci à toutes les entreprises et structures qui accompagnent le club au quotidien.</p>
+  </PageHero>
+
+  <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
+    <SectionTitle eyebrow="À nos côtés" title="Nos partenaires" />
+    <PartnerGrid named />
+  </section>
+
+  <section class="border-t border-border bg-ink">
+    <div class="mx-auto max-w-3xl px-4 py-20 text-center sm:px-6">
+      <p class="text-xs font-semibold uppercase tracking-[0.35em] text-gold">À vos côtés</p>
+      <h2 class="mt-3 text-5xl uppercase leading-none">Devenez<br />partenaire du club</h2>
+      <div class="gold-rule mx-auto mt-6 w-20"></div>
+      <p class="mx-auto mt-6 max-w-xl text-muted-foreground">Associez votre image à Morez Handball et participez au développement du handball dans le Haut-Jura.</p>
+      <a href="/contact/" class="mt-8 inline-flex items-center gap-2 border border-gold/60 px-6 py-3 font-bold uppercase tracking-wide text-gold transition-colors hover:bg-gold hover:text-ink">Devenir partenaire <Icon name="arrow-right" /></a>
+    </div>
+  </section>
+</Layout>

@@ -1,0 +1,47 @@
+---
+import Layout from '@/layouts/Layout.astro'
+import PageHero from '@/components/PageHero.astro'
+import SectionTitle from '@/components/SectionTitle.astro'
+import MatchFeature from '@/components/MatchFeature.astro'
+import MatchCard from '@/components/MatchCard.astro'
+import heroImage from '@/assets/equipes/baby-hand.jpg'
+import { lastResult, playedMatches, upcomingMatches } from '@/data/matches'
+
+// Résultats précédents (hors dernier résultat), du plus récent au plus ancien
+const olderResults = playedMatches.slice(0, -1).reverse()
+---
+<Layout title="Matchs" description="Calendrier et résultats de Morez Handball, à domicile comme en déplacement.">
+  <PageHero
+    image={heroImage}
+    eyebrow="Calendrier & scores"
+    title="Matchs"
+    intro="Toutes les rencontres de Morez Handball, à domicile comme en déplacement, mises à jour chaque semaine."
+  />
+
+  <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
+    {lastResult && (
+      <div class="mb-16">
+        <SectionTitle eyebrow={`Journée ${lastResult.round}`} title="Dernier résultat" />
+        <MatchFeature match={lastResult} label="Dernier résultat" />
+      </div>
+    )}
+
+    {upcomingMatches.length > 0 && (
+      <div class="mb-16">
+        <SectionTitle eyebrow="Calendrier" title="Prochains matchs" />
+        <div class="grid gap-4 md:grid-cols-2">
+          {upcomingMatches.map(m => <MatchCard match={m} />)}
+        </div>
+      </div>
+    )}
+
+    {olderResults.length > 0 && (
+      <div>
+        <SectionTitle eyebrow="Saison" title="Résultats précédents" />
+        <div class="grid gap-4 md:grid-cols-2">
+          {olderResults.map(m => <MatchCard match={m} />)}
+        </div>
+      </div>
+    )}
+  </section>
+</Layout>

@@ -1,0 +1,31 @@
+---
+import { Image } from 'astro:assets'
+import Icon from './Icon.astro'
+import type { Team } from '@/data/teams'
+
+// `detailed` : version de la page Équipes (années de naissance, description, lien)
+interface Props {
+  team: Team
+  detailed?: boolean
+}
+const { team, detailed = false } = Astro.props
+const first = team.slots[0]
+---
+<a href={`/equipes/${team.slug}/`} class="group surface-card overflow-hidden">
+  <div class="overflow-hidden">
+    <Image src={team.image} alt={`Équipe ${team.name} de Morez Handball`} widths={[480, 800]} sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw" class="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+  </div>
+  <div class="p-6">
+    <p class="text-xs uppercase tracking-[0.28em] text-gold">{team.group}</p>
+    <h3 class="mt-2 text-2xl uppercase">{team.name}</h3>
+    {detailed ? (
+      <>
+        <p class="mt-1 text-sm text-muted-foreground">Nés en {team.birthYears}</p>
+        <p class="mt-4 text-sm text-muted-foreground">{team.description}</p>
+        <span class="mt-5 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gold">Voir l'équipe <Icon name="arrow-right" /></span>
+      </>
+    ) : (
+      <p class="mt-1 text-sm text-muted-foreground">{first.day} · {first.time}</p>
+    )}
+  </div>
+</a>

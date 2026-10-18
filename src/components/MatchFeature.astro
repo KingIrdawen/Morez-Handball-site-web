@@ -1,0 +1,37 @@
+---
+import { Image } from 'astro:assets'
+import ClubLogo from './ClubLogo.astro'
+import MatchMeta from './MatchMeta.astro'
+import { clubs, opponentOf, outcome, type Match } from '@/data/matches'
+
+// Grande carte : « Prochain match » (accueil) ou « Dernier résultat » (page Matchs)
+interface Props {
+  match: Match
+  label: string
+}
+const { match, label } = Astro.props
+const result = outcome(match)
+const watermark = clubs[opponentOf(match)].logo
+---
+<div class="surface-card relative isolate overflow-hidden p-8">
+  <Image src={watermark} alt="" aria-hidden="true" width={256} class="pointer-events-none absolute -top-10 -right-12 -z-10 h-64 w-64 object-contain opacity-[0.08] blur-[1px]" />
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <p class="text-xs font-semibold uppercase tracking-[0.35em] text-gold">{label}</p>
+    {result && <span class:list={['px-2 py-0.5 text-xs font-bold uppercase tracking-wide', result === 'Victoire' ? 'bg-gold text-ink' : 'border border-gold/50 text-gold']}>{result}</span>}
+  </div>
+  <p class="mt-3 text-sm uppercase tracking-wide text-muted-foreground">Journée {match.round}</p>
+  <div class="mt-6 space-y-4">
+    <div class="flex items-center gap-4">
+      <ClubLogo club={match.home} size="lg" />
+      <p class="font-display text-3xl uppercase leading-none sm:text-4xl">{clubs[match.home].name}</p>
+    </div>
+    <p class="font-display text-xl text-gold">{match.score ? `${match.score[0]} – ${match.score[1]}` : 'contre'}</p>
+    <div class="flex items-center gap-4">
+      <ClubLogo club={match.away} size="lg" />
+      <p class="font-display text-3xl uppercase leading-none sm:text-4xl">{clubs[match.away].name}</p>
+    </div>
+  </div>
+  <div class="mt-7 border-t border-border pt-5">
+    <MatchMeta match={match} />
+  </div>
+</div>

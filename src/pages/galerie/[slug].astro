@@ -1,0 +1,82 @@
+---
+import { Image, getImage } from 'astro:assets'
+import Layout from '@/layouts/Layout.astro'
+import PageHero from '@/components/PageHero.astro'
+import Icon from '@/components/Icon.astro'
+import { albums, albumPhotos, type Album } from '@/data/albums'
+
+export function getStaticPaths() {
+  return albums.map(album => ({ params: { slug: album.slug }, props: { album } }))
+}
+
+const { album } = Astro.props as { album: Album }
+const photos = albumPhotos(album)
+// Version grand format de chaque photo, chargée seulement à l'ouverture de la visionneuse
+const large = await Promise.all(photos.map(p => getImage({ src: p.image, width: 1800 })))
+---
+<Layout title={album.title} description={`${album.title} — ${photos.length} photos · ${album.team} · ${album.place}`}>
+  <PageHero image={photos[0].image} eyebrow={album.season} title={album.title} back={{ href: '/galerie/', label: 'Galerie' }}>
+    <p class="mt-6 text-sm uppercase tracking-wide text-muted-foreground">{photos.length} photos · {album.team} · {album.place}</p>
+  </PageHero>
+
+  <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-20">
+    <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+      {photos.map((p, i) => (
+        <button
+          type="button"
+          class:list={['group relative overflow-hidden bg-ink focus-visible:ring-2 focus-visible:ring-gold focus-visible:outline-none', i === 0 ? 'col-span-2 row-span-2' : 'aspect-[4/3]']}
+          data-photo={i}
+          data-src={large[i].src}
+          data-caption={p.caption}
+          aria-label={`Agrandir : ${p.caption}`}
+        >
+          <Image src={p.image} alt={p.caption} widths={i === 0 ? [600, 1000] : [400, 640]} sizes={i === 0 ? '(min-width: 1024px) 50vw, 100vw' : '(min-width: 1024px) 25vw, 50vw'} class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+        </button>
+      ))}
+    </div>
+  </section>
+
+  <!-- Visionneuse plein écran -->
+  <dialog id="lightbox" class="m-0 h-full max-h-none w-full max-w-none bg-ink/95 p-0 text-foreground backdrop:bg-ink/90" aria-label="Visionneuse photo">
+    <div class="flex h-full flex-col items-center justify-center px-4 py-16 sm:px-24">
+      <img id="lightbox-img" alt="" class="max-h-[80vh] max-w-full object-contain" />
+      <p id="lightbox-caption" class="mt-4 text-center text-sm text-muted-foreground"></p>
+    </div>
+    <button type="button" class="absolute top-4 right-4 grid h-10 w-10 place-items-center border border-border bg-ink hover:border-gold" aria-label="Fermer" data-close><Icon name="x" class="h-5 w-5" /></button>
+    <button type="button" class="absolute top-1/2 left-3 grid h-11 w-11 -translate-y-1/2 place-items-center border border-border bg-ink hover:border-gold sm:left-6" aria-label="Photo précédente" data-prev><Icon name="chevron-left" class="h-5 w-5" /></button>
+    <button type="button" class="absolute top-1/2 right-3 grid h-11 w-11 -translate-y-1/2 place-items-center border border-border bg-ink hover:border-gold sm:right-6" aria-label="Photo suivante" data-next><Icon name="chevron-right" class="h-5 w-5" /></button>
+  </dialog>
+</Layout>
+
+<script>
+  const dialog = document.getElementById('lightbox') as HTMLDialogElement
+  const img = document.getElementById('lightbox-img') as HTMLImageElement
+  const caption = document.getElementById('lightbox-caption')!
+  const items = [...document.querySelectorAll<HTMLButtonElement>('[data-photo]')]
+  let index = 0
+
+  function show(i: number) {
+    index = (i + items.length) % items.length
+    const item = items[index]
+    img.src = item.dataset.src!
+    img.alt = item.dataset.caption!
+    caption.textContent = `${item.dataset.caption} · ${index + 1} / ${items.length}`
+  }
+
+  items.forEach((item, i) => item.addEventListener('click', () => { show(i); dialog.showModal() }))
+  dialog.querySelector('[data-close]')?.addEventListener('click', () => dialog.close())
+  dialog.querySelector('[data-prev]')?.addEventListener('click', () => show(index - 1))
+  dialog.querySelector('[data-next]')?.addEventListener('click', () => show(index + 1))
+  // Clic sur le fond sombre : fermeture
+  dialog.addEventListener('click', e => { if (e.target === dialog || (e.target as HTMLElement).tagName === 'DIV') dialog.close() })
+  dialog.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') show(index - 1)
+    if (e.key === 'ArrowRight') show(index + 1)
+  })
+  let startX = 0
+  dialog.addEventListener('touchstart', e => { startX = e.touches[0].clientX }, { passive: true })
+  dialog.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX
+    if (Math.abs(dx) > 40) show(index + (dx < 0 ? 1 : -1))
+  })
+</script>

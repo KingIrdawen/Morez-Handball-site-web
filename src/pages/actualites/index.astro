@@ -1,0 +1,22 @@
+---
+import { getCollection } from 'astro:content'
+import Layout from '@/layouts/Layout.astro'
+import PageHero from '@/components/PageHero.astro'
+import NewsCard from '@/components/NewsCard.astro'
+import heroImage from '@/assets/equipes/moins-de-15.jpg'
+
+const news = (await getCollection('actualites')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+---
+<Layout title="Actualités" description="Résultats, coulisses, école de hand et annonces de Morez Handball.">
+  <PageHero
+    image={heroImage}
+    eyebrow="La saison en direct"
+    title="Actualités"
+    intro="Résultats, coulisses, école de hand et annonces du club : tout ce qui fait vivre Morez Handball."
+  />
+  <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {news.map(article => <NewsCard article={article} />)}
+    </div>
+  </section>
+</Layout>

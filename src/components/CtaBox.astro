@@ -1,0 +1,17 @@
+---
+// Encart d'appel à l'action en bas des pages (« Envie de rejoindre Morez ? »)
+interface Props {
+  title: string
+  text: string
+  href: string
+  label: string
+}
+const { title, text, href, label } = Astro.props
+---
+<div class="surface-card flex flex-col items-start justify-between gap-6 p-8 sm:flex-row sm:items-center">
+  <div>
+    <h2 class="text-3xl uppercase">{title}</h2>
+    <p class="mt-2 text-muted-foreground">{text}</p>
+  </div>
+  <a href={href} class="shrink-0 bg-gold px-6 py-3 font-bold uppercase tracking-wide text-ink transition-transform hover:-translate-y-0.5">{label}</a>
+</div>

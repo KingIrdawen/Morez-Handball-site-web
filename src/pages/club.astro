@@ -1,0 +1,54 @@
+---
+import { Image } from 'astro:assets'
+import Layout from '@/layouts/Layout.astro'
+import PageHero from '@/components/PageHero.astro'
+import SectionTitle from '@/components/SectionTitle.astro'
+import StatsBand from '@/components/StatsBand.astro'
+import CtaBox from '@/components/CtaBox.astro'
+import heroImage from '@/assets/club/club.jpg'
+import historyImage from '@/assets/equipes/moins-de-11.jpg'
+
+const values = [
+  { title: 'Instinct du lynx', text: "Vitesse, lecture du jeu et précision. On attaque les espaces avant qu'ils n'existent." },
+  { title: 'Esprit de meute', text: 'Personne ne défend seul. Le collectif passe avant la statistique individuelle.' },
+  { title: 'Racines Haut-Jura', text: 'Un club de montagne, exigeant et chaleureux, ancré dans son territoire et ses écoles.' },
+  { title: 'Formation et plaisir', text: 'Du Baby Hand aux seniors, progresser sans jamais perdre le goût du jeu.' },
+]
+---
+<Layout title="Le club" description="Handball Morez Haut-Jura : un club de montagne exigeant et familial, où l'on apprend le handball par le collectif et le plaisir du jeu.">
+  <PageHero
+    image={heroImage}
+    eyebrow="Notre identité"
+    title="Le club"
+    intro="Handball Morez Haut-Jura : un club de montagne exigeant et familial, où l'on apprend le handball par le collectif et le plaisir du jeu."
+  />
+
+  <section class="mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-2">
+    <div>
+      <SectionTitle eyebrow="Notre histoire" title="Né du parquet et de la montagne" />
+      <div class="space-y-4 text-muted-foreground">
+        <p>Au cœur du Haut-Jura, Morez Handball fait vivre le handball là où l'hiver est long et les pentes raides. Le club rassemble les jeunes des Hauts de Bienne et des vallées voisines autour d'un même gymnase et d'une même exigence.</p>
+        <p>Ici, on ne sélectionne pas : on forme. Les enfants arrivent au Baby Hand ou à l'école de hand, franchissent les catégories, et beaucoup terminent en seniors avec le maillot du club sur les épaules.</p>
+        <p>Le club est labellisé par la Fédération Française de Handball pour la qualité de son encadrement et de son projet de formation.</p>
+      </div>
+    </div>
+    <Image src={historyImage} alt="Entraîneur donnant des consignes à ses joueurs au gymnase de Morez" widths={[640, 1200]} sizes="(min-width: 1024px) 50vw, 100vw" class="border border-gold/20 object-cover" />
+  </section>
+
+  <StatsBand />
+
+  <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
+    <SectionTitle eyebrow="Ce qui nous tient" title="Nos valeurs" />
+    <div class="grid gap-4 md:grid-cols-2">
+      {values.map(v => (
+        <div class="surface-card p-7">
+          <h3 class="text-2xl uppercase text-gold">{v.title}</h3>
+          <p class="mt-3 text-muted-foreground">{v.text}</p>
+        </div>
+      ))}
+    </div>
+    <div class="mt-16">
+      <CtaBox title="Envie de rejoindre Morez ?" text="Contactez-nous pour obtenir toutes les informations concernant votre catégorie." href="/rejoindre/" label="S'inscrire" />
+    </div>
+  </section>
+</Layout>

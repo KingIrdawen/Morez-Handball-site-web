@@ -1,0 +1,53 @@
+---
+import Layout from '@/layouts/Layout.astro'
+import PageHero from '@/components/PageHero.astro'
+import SectionTitle from '@/components/SectionTitle.astro'
+import CtaBox from '@/components/CtaBox.astro'
+import heroImage from '@/assets/club/rejoindre.jpg'
+import { club } from '@/data/site'
+import { teams } from '@/data/teams'
+
+const steps = [
+  { title: '1. Contactez le club', text: 'Envie de découvrir le handball ou de rejoindre Morez ? Contactez-nous pour obtenir toutes les informations concernant votre catégorie.' },
+  { title: '2. Trouvez votre catégorie', text: 'Le club vous oriente vers le groupe adapté à votre âge et vous communique les informations utiles.' },
+  { title: '3. Recevez les informations', text: "Les modalités de pratique et d'inscription vous sont transmises directement par l'équipe du club." },
+]
+---
+<Layout title="Rejoindre le club" description="Débutant ou joueur confirmé, enfant ou adulte : inscrivez-vous à Morez Handball.">
+  <PageHero
+    image={heroImage}
+    eyebrow={`Licence ${club.registrationSeason}`}
+    title="Rejoindre le club"
+    intro="Débutant ou joueur confirmé, enfant ou adulte : il y a une place pour vous au gymnase de Morez."
+  />
+
+  <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
+    <SectionTitle eyebrow="Comment ça marche" title="Trois étapes" />
+    <div class="grid gap-5 md:grid-cols-3">
+      {steps.map(s => (
+        <div class="surface-card p-7">
+          <h3 class="text-2xl uppercase text-gold">{s.title}</h3>
+          <p class="mt-3 text-sm text-muted-foreground">{s.text}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-7xl border-t border-border px-4 py-16 sm:px-6 md:py-24">
+    <SectionTitle eyebrow="Choisissez votre créneau" title="Horaires par catégorie" />
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {teams.map(t => (
+        <a href={`/equipes/${t.slug}/`} class="surface-card block p-6 transition-colors hover:border-gold/50">
+          <h3 class="text-2xl uppercase">{t.name}</h3>
+          <p class="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{t.birthYears}</p>
+          <ul class="mt-4 space-y-1 text-sm text-gold">
+            {t.slots.map(s => <li>{s.day} · {s.time}</li>)}
+          </ul>
+        </a>
+      ))}
+    </div>
+    <div class="mt-16">
+      <CtaBox title="Une question avant de venir ?" text="Contactez le club pour obtenir toutes les informations concernant votre catégorie." href="/contact/" label="Nous contacter" />
+    </div>
+  </section>
+</Layout>

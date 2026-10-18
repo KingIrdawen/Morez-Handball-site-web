@@ -1,0 +1,39 @@
+---
+import Layout from '@/layouts/Layout.astro'
+import PageHero from '@/components/PageHero.astro'
+import SectionTitle from '@/components/SectionTitle.astro'
+import Icon from '@/components/Icon.astro'
+import heroImage from '@/assets/equipes/moins-de-11.jpg'
+import { club } from '@/data/site'
+
+// Les coordonnées viennent de src/data/site.ts : une ligne vide n'est pas affichée
+const items = [
+  { icon: 'map-pin', label: 'Salle', value: club.address || club.venue, href: undefined },
+  { icon: 'phone', label: 'Téléphone', value: club.phone, href: `tel:${club.phone.replace(/\s/g, '')}` },
+  { icon: 'mail', label: 'E-mail', value: club.email, href: `mailto:${club.email}` },
+] as const
+---
+<Layout title="Contact" description="Licence, créneaux ou partenariat : contactez Morez Handball au gymnase de Morez.">
+  <PageHero
+    image={heroImage}
+    eyebrow="Écrivez-nous"
+    title="Contact"
+    intro="Licence, créneaux ou partenariat : retrouvez le club au gymnase de Morez."
+  />
+  <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
+    <SectionTitle eyebrow="Le club" title="Nous trouver" />
+    <ul class="space-y-6">
+      {items.filter(i => i.value).map(i => (
+        <li class="flex items-start gap-4">
+          <Icon name={i.icon} class="mt-0.5 h-5 w-5 shrink-0 text-gold" />
+          <div>
+            <p class="font-bold uppercase">{i.label}</p>
+            {i.href
+              ? <a href={i.href} class="text-muted-foreground hover:text-gold">{i.value}</a>
+              : <p class="text-muted-foreground">{i.value}</p>}
+          </div>
+        </li>
+      ))}
+    </ul>
+  </section>
+</Layout>

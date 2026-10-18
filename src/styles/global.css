@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+/* Polices hébergées avec le site (aucun appel à Google Fonts) */
+@import "@fontsource/bebas-neue/400.css";
+@import "@fontsource/barlow/400.css";
+@import "@fontsource/barlow/500.css";
+@import "@fontsource/barlow/600.css";
+@import "@fontsource/barlow/700.css";
+
+/* Charte du club : noir profond, or, titres en Bebas Neue */
+@theme {
+  --color-background: oklch(14% 0 0);
+  --color-foreground: oklch(98% 0 0);
+  --color-card: oklch(18% 0.002 250);
+  --color-muted: oklch(24% 0.002 250);
+  --color-muted-foreground: oklch(72% 0.01 90);
+  --color-border: oklch(100% 0 0 / 0.12);
+  --color-gold: oklch(74% 0.135 76);
+  --color-gold-soft: oklch(84% 0.11 82);
+  --color-ink: oklch(10% 0 0);
+
+  --font-display: "Bebas Neue", "Arial Narrow", sans-serif;
+  --font-body: "Barlow", system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: 0.02em;
+  }
+  ::selection {
+    background: var(--color-gold);
+    color: var(--color-ink);
+  }
+}
+
+@layer components {
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: 0.02em;
+  }
+  /* Filet doré sous les titres de section */
+  .gold-rule {
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-gold), transparent);
+  }
+  /* Carte sombre avec un léger reflet doré */
+  .surface-card {
+    background:
+      linear-gradient(150deg, color-mix(in oklab, var(--color-gold) 6%, transparent), transparent 55%),
+      var(--color-card);
+    border: 1px solid color-mix(in oklab, var(--color-gold) 18%, transparent);
+  }
+  /* Carte joueur du carrousel */
+  .roster-card {
+    height: clamp(31rem, 64vw, 42rem);
+    box-shadow: 0 30px 80px color-mix(in oklab, var(--color-ink) 80%, transparent);
+  }
+}
