@@ -9,6 +9,6 @@ interface Props {
 const { club, size = 'sm' } = Astro.props
 const { name, logo } = clubs[club]
 ---
-<span class:list={['grid shrink-0 place-items-center rounded-full bg-ink/70 ring-1 ring-gold/20', size === 'lg' ? 'h-24 w-24 p-2' : 'h-12 w-12 p-1']}>
-  <Image src={logo} alt={`Logo ${name}`} width={size === 'lg' ? 160 : 96} class="h-full w-full object-contain" />
+<span class:list={['flex shrink-0 items-center justify-center rounded-full bg-ink/70 ring-1 ring-gold/20', size === 'lg' ? 'h-24 w-24 p-2' : 'h-12 w-12 p-1']}>
+  <Image src={logo} alt={`Logo ${name}`} width={size === 'lg' ? 160 : 96} class="h-full w-full min-h-0 object-contain" />
 </span>

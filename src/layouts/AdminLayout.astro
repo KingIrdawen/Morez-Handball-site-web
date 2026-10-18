@@ -1,7 +1,7 @@
 ---
 import '@/styles/global.css'
 import { Image } from 'astro:assets'
-import logo from '@/assets/club/logo.jpg'
+import logo from '@/assets/club/logo.png'
 
 interface Props {
   title: string
@@ -26,7 +26,7 @@ const links = [
     <header class="border-b border-border bg-ink">
       <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <a href="/admin/" class="flex items-center gap-3">
-          <Image src={logo} alt="" width={80} height={80} class="h-10 w-10" />
+          <Image src={logo} alt="" height={88} class="h-11 w-auto" />
           <span class="leading-none">
             <span class="block font-display text-xl uppercase">Espace admin</span>
             <span class="mt-1 block text-[0.62rem] font-semibold uppercase tracking-[0.3em] text-gold">Morez Handball</span>

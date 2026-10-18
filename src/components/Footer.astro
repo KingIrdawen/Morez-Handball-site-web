@@ -1,7 +1,7 @@
 ---
 import { Image } from 'astro:assets'
 import Icon from './Icon.astro'
-import logo from '@/assets/club/logo.jpg'
+import logo from '@/assets/club/logo.png'
 import { club, footerLinks, phoneHref } from '@/data/site'
 
 const year = new Date().getFullYear()
@@ -10,7 +10,7 @@ const year = new Date().getFullYear()
   <div class="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-3">
     <div>
       <a href="/" class="flex items-center gap-3">
-        <Image src={logo} alt="" width={96} height={96} class="h-12 w-12" />
+        <Image src={logo} alt="" height={112} class="h-14 w-auto" />
         <span class="leading-none">
           <span class="block font-display text-2xl uppercase">{club.name}</span>
           <span class="mt-1 block text-xs font-semibold uppercase tracking-[0.3em] text-gold">{club.tagline}</span>

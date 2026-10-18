@@ -12,7 +12,7 @@ import NewsCard from '@/components/NewsCard.astro'
 import PlayerCarousel from '@/components/PlayerCarousel.astro'
 import AlbumCard from '@/components/AlbumCard.astro'
 import PartnerGrid from '@/components/PartnerGrid.astro'
-import logo from '@/assets/club/logo.jpg'
+import logo from '@/assets/club/logo.png'
 import rejoindre from '@/assets/club/rejoindre.jpg'
 import { club } from '@/data/site'
 import { teams } from '@/data/teams'
@@ -32,7 +32,7 @@ const latestAlbum = albums[0]
     <Image src={hero} alt="Joueur de Morez Handball en suspension devant la cage adverse" widths={[800, 1600, 2400]} sizes="100vw" loading="eager" fetchpriority="high" class="absolute inset-0 -z-10 h-full w-full object-cover" />
     <div class="absolute inset-0 -z-10 bg-gradient-to-t from-background via-background/85 to-background/50"></div>
     <div class="mx-auto flex min-h-[88vh] max-w-7xl flex-col justify-end px-4 pt-24 pb-16 sm:px-6">
-      <Image src={logo} alt="" width={192} height={192} class="h-24 w-24" loading="eager" />
+      <Image src={logo} alt="" height={256} class="h-28 w-auto self-start sm:h-32" loading="eager" />
       <p class="mt-6 text-xs font-semibold uppercase tracking-[0.4em] text-gold">{club.fullName} · {club.department}</p>
       <h1 class="mt-4 max-w-4xl text-5xl uppercase leading-[0.88] sm:text-7xl lg:text-8xl">Morez<br /><span class="text-gold">Handball</span></h1>
       <p class="mt-6 max-w-xl text-base text-muted-foreground sm:text-lg">Vitesse du lynx, force du collectif. Du Baby Hand aux seniors, on forme des joueurs et on construit une famille au gymnase de Morez.</p>
