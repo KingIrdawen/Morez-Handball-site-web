@@ -2,7 +2,7 @@
 import { Image } from 'astro:assets'
 import Icon from './Icon.astro'
 import logo from '@/assets/club/logo.jpg'
-import { club, footerLinks } from '@/data/site'
+import { club, footerLinks, phoneHref } from '@/data/site'
 
 const year = new Date().getFullYear()
 ---
@@ -33,9 +33,9 @@ const year = new Date().getFullYear()
     <div>
       <p class="font-display text-xl uppercase text-gold">Contact</p>
       <ul class="mt-4 space-y-3 text-sm text-muted-foreground">
-        <li class="flex items-center gap-2.5"><Icon name="map-pin" class="h-4 w-4 shrink-0 text-gold" />{club.address || club.venue}</li>
-        {club.phone && <li><a href={`tel:${club.phone.replace(/\s/g, '')}`} class="flex items-center gap-2.5 hover:text-gold"><Icon name="phone" class="h-4 w-4 shrink-0 text-gold" />{club.phone}</a></li>}
-        {club.email && <li><a href={`mailto:${club.email}`} class="flex items-center gap-2.5 hover:text-gold"><Icon name="mail" class="h-4 w-4 shrink-0 text-gold" />{club.email}</a></li>}
+        <li class="flex items-start gap-2.5"><Icon name="map-pin" class="mt-0.5 h-4 w-4 shrink-0 text-gold" /><span>{club.venue}<br />{club.venueAddress}</span></li>
+        {club.phone && <li><a href={phoneHref(club.phone)} class="flex items-center gap-2.5 hover:text-gold"><Icon name="phone" class="h-4 w-4 shrink-0 text-gold" />{club.phone}</a></li>}
+        {club.email && <li><a href={`mailto:${club.email}`} class="flex items-center gap-2.5 break-all hover:text-gold"><Icon name="mail" class="h-4 w-4 shrink-0 text-gold" />{club.email}</a></li>}
       </ul>
     </div>
   </div>

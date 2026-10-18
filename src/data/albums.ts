@@ -20,7 +20,7 @@ export const albums: Album[] = [
     title: 'Match Seniors 13.09',
     season: 'Saison 2025-2026',
     team: 'Équipe Seniors',
-    place: 'Gymnase de Morez',
+    place: 'Gymnase de la Citadelle',
     cover: 'DSC_0504.jpg',
     captions: {
       'DSC_0475.jpg': 'relance du gardien',

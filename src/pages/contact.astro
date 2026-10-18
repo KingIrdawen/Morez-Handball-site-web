@@ -4,36 +4,65 @@ import PageHero from '@/components/PageHero.astro'
 import SectionTitle from '@/components/SectionTitle.astro'
 import Icon from '@/components/Icon.astro'
 import heroImage from '@/assets/equipes/moins-de-11.jpg'
-import { club } from '@/data/site'
+import { club, phoneHref } from '@/data/site'
 
-// Les coordonnées viennent de src/data/site.ts : une ligne vide n'est pas affichée
-const items = [
-  { icon: 'map-pin', label: 'Salle', value: club.address || club.venue, href: undefined },
-  { icon: 'phone', label: 'Téléphone', value: club.phone, href: `tel:${club.phone.replace(/\s/g, '')}` },
-  { icon: 'mail', label: 'E-mail', value: club.email, href: `mailto:${club.email}` },
-] as const
+// Les coordonnées viennent de src/data/site.ts
+const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${club.venue} ${club.venueAddress}`)}`
 ---
-<Layout title="Contact" description="Licence, créneaux ou partenariat : contactez Morez Handball au gymnase de Morez.">
+<Layout title="Contact" description={`Contactez Morez Handball : ${club.phone}, ${club.email}. Entraînements et matchs au ${club.venue}, ${club.venueAddress}.`}>
   <PageHero
     image={heroImage}
     eyebrow="Écrivez-nous"
     title="Contact"
-    intro="Licence, créneaux ou partenariat : retrouvez le club au gymnase de Morez."
+    intro="Licence, créneaux ou partenariat : contactez le club ou retrouvez-nous au gymnase."
   />
-  <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
-    <SectionTitle eyebrow="Le club" title="Nous trouver" />
-    <ul class="space-y-6">
-      {items.filter(i => i.value).map(i => (
+
+  <section class="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 md:grid-cols-2 md:py-24">
+    <div>
+      <SectionTitle eyebrow="Le club" title="Nous contacter" />
+      <ul class="space-y-6">
         <li class="flex items-start gap-4">
-          <Icon name={i.icon} class="mt-0.5 h-5 w-5 shrink-0 text-gold" />
+          <Icon name="map-pin" class="mt-0.5 h-5 w-5 shrink-0 text-gold" />
           <div>
-            <p class="font-bold uppercase">{i.label}</p>
-            {i.href
-              ? <a href={i.href} class="text-muted-foreground hover:text-gold">{i.value}</a>
-              : <p class="text-muted-foreground">{i.value}</p>}
+            <p class="font-bold uppercase">Adresse postale</p>
+            <address class="text-muted-foreground not-italic">
+              {club.fullName}<br />{club.address}<br />{club.postalCode}
+            </address>
           </div>
         </li>
-      ))}
-    </ul>
+        {club.phone && (
+          <li class="flex items-start gap-4">
+            <Icon name="phone" class="mt-0.5 h-5 w-5 shrink-0 text-gold" />
+            <div>
+              <p class="font-bold uppercase">Téléphone</p>
+              <a href={phoneHref(club.phone)} class="text-muted-foreground transition-colors hover:text-gold">{club.phone}</a>
+            </div>
+          </li>
+        )}
+        {club.email && (
+          <li class="flex items-start gap-4">
+            <Icon name="mail" class="mt-0.5 h-5 w-5 shrink-0 text-gold" />
+            <div class="min-w-0">
+              <p class="font-bold uppercase">E-mail</p>
+              <a href={`mailto:${club.email}`} class="break-all text-muted-foreground transition-colors hover:text-gold">{club.email}</a>
+            </div>
+          </li>
+        )}
+      </ul>
+    </div>
+
+    <div>
+      <SectionTitle eyebrow="Entraînements et matchs" title="Nous trouver" />
+      <div class="flex items-start gap-4">
+        <Icon name="map-pin" class="mt-0.5 h-5 w-5 shrink-0 text-gold" />
+        <div>
+          <p class="font-bold uppercase">Salle</p>
+          <address class="text-muted-foreground not-italic">{club.venue}<br />{club.venueAddress}</address>
+          <a href={mapsUrl} target="_blank" rel="noopener" class="mt-4 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gold">
+            Voir sur la carte <Icon name="arrow-right" />
+          </a>
+        </div>
+      </div>
+    </div>
   </section>
 </Layout>
