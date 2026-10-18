@@ -1,0 +1,82 @@
+---
+import AdminLayout from '@/layouts/AdminLayout.astro'
+import Icon from '@/components/Icon.astro'
+---
+<AdminLayout title="Connexion" public>
+  <!-- Connexion -->
+  <section data-login class="mx-auto max-w-md">
+    <h1 class="text-4xl uppercase">Connexion</h1>
+    <div class="gold-rule mt-4 w-20"></div>
+    <p class="mt-5 text-muted-foreground">Réservé aux membres du club autorisés à publier sur le site.</p>
+    <form class="surface-card mt-8 space-y-5 p-6" data-login-form>
+      <label class="admin-field">
+        <span class="admin-label">Adresse e-mail</span>
+        <input class="admin-input" type="email" name="email" autocomplete="username" required />
+      </label>
+      <label class="admin-field">
+        <span class="admin-label">Code d'accès</span>
+        <input class="admin-input" type="password" name="code" autocomplete="current-password" required />
+      </label>
+      <p class="hidden text-sm text-red-400" data-login-error role="alert"></p>
+      <button class="admin-btn w-full" type="submit">Se connecter</button>
+    </form>
+  </section>
+
+  <!-- Tableau de bord, une fois connecté -->
+  <section data-dashboard class="hidden">
+    <p class="text-sm text-muted-foreground">Connecté en tant que <span class="text-foreground" data-admin-email></span></p>
+    <h1 class="mt-2 text-4xl uppercase">Que voulez-vous faire ?</h1>
+    <div class="gold-rule mt-4 w-20"></div>
+    <div class="mt-8 grid gap-5 sm:grid-cols-2">
+      <a href="/admin/actualites/" class="surface-card group block p-7 transition-colors hover:border-gold/60">
+        <Icon name="images" class="h-8 w-8 text-gold" />
+        <h2 class="mt-4 text-3xl uppercase">Publier une actualité</h2>
+        <p class="mt-2 text-sm text-muted-foreground">Titre, photo, texte : la mise en page est automatique. Le nouvel article apparaît en tête des actualités.</p>
+        <span class="mt-5 inline-flex items-center gap-2 text-sm font-bold uppercase text-gold">Nouvel article <Icon name="arrow-right" /></span>
+      </a>
+      <a href="/admin/matchs/" class="surface-card group block p-7 transition-colors hover:border-gold/60">
+        <Icon name="calendar" class="h-8 w-8 text-gold" />
+        <h2 class="mt-4 text-3xl uppercase">Matchs et résultats</h2>
+        <p class="mt-2 text-sm text-muted-foreground">Saisir un score, ajouter un prochain match, ajouter un club en glissant son logo.</p>
+        <span class="mt-5 inline-flex items-center gap-2 text-sm font-bold uppercase text-gold">Gérer les matchs <Icon name="arrow-right" /></span>
+      </a>
+    </div>
+  </section>
+</AdminLayout>
+
+<script>
+  import { api } from '@/scripts/admin'
+
+  const login = document.querySelector<HTMLElement>('[data-login]')!
+  const dashboard = document.querySelector<HTMLElement>('[data-dashboard]')!
+  const form = document.querySelector<HTMLFormElement>('[data-login-form]')!
+  const error = document.querySelector<HTMLElement>('[data-login-error]')!
+  const back = new URLSearchParams(location.search).get('retour')
+
+  function showDashboard(email: string) {
+    if (back?.startsWith('/admin/')) { location.href = back; return }
+    document.querySelectorAll('[data-admin-email]').forEach(el => { el.textContent = email })
+    login.classList.add('hidden')
+    dashboard.classList.remove('hidden')
+  }
+
+  // Déjà connecté ?
+  fetch('/api/admin/session').then(r => (r.ok ? r.json() : null)).then(d => d?.email && showDashboard(d.email)).catch(() => null)
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault()
+    const button = form.querySelector('button')!
+    button.disabled = true
+    error.classList.add('hidden')
+    try {
+      const data = Object.fromEntries(new FormData(form))
+      const { email } = await api<{ email: string }>('login', { method: 'POST', body: JSON.stringify(data) })
+      showDashboard(email)
+    } catch (err) {
+      error.textContent = err instanceof Error ? err.message : String(err)
+      error.classList.remove('hidden')
+    } finally {
+      button.disabled = false
+    }
+  })
+</script>

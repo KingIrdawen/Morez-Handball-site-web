@@ -21,13 +21,44 @@ npm run build      # génère le site final dans dist/
 npm run preview    # affiche le contenu de dist/ pour vérifier avant de publier
 ```
 
-## Modifier le contenu
+## Espace admin (publier sans toucher au code)
+
+Adresse : **`/admin/`** (ex. https://morez-handball-site-web.vercel.app/admin/). Accès réservé aux adresses e-mail
+de la liste blanche, avec leur code.
+
+- **Actualités** : titre, catégorie, résumé, photo glissée, texte. La mise en page est automatique (chaque ligne
+  devient un paragraphe) et le nouvel article apparaît en tête de la page Actualités et de l'accueil.
+  Les articles existants peuvent être supprimés.
+- **Matchs** : saisir un score (le match passe en « Dernier résultat » avec Victoire / Défaite / Nul), ajouter un
+  match, ajouter un club en glissant son logo, glisser un logo sur un match pour choisir l'équipe.
+
+Chaque enregistrement crée un commit dans le dépôt GitHub ; Vercel republie alors le site (1 à 2 minutes).
+Le site reste 100 % statique : pas de base de données.
+
+### Mise en service (une seule fois)
+
+1. **Jeton GitHub** : github.com → Settings → Developer settings → Personal access tokens → *Fine-grained tokens* →
+   *Generate new token*. Repository access : *Only select repositories* → ce dépôt.
+   Permissions : *Contents* → **Read and write**. Copier le jeton.
+2. **Variables Vercel** : projet → Settings → Environment Variables (environnement *Production*) :
+   - `ADMIN_USERS` : `email1:code1;email2:code2` (codes longs, 12 caractères ou plus)
+   - `ADMIN_SECRET` : une chaîne aléatoire de 32 caractères ou plus
+   - `GITHUB_TOKEN` : le jeton de l'étape 1
+3. **Redéployer** (Deployments → … → Redeploy) pour que les variables soient prises en compte.
+
+Pour ajouter ou retirer une personne : modifier `ADMIN_USERS` dans Vercel puis redéployer. Une personne retirée
+perd l'accès immédiatement après le redéploiement.
+
+En local, copier `.env.example` en `.env` : sans `GITHUB_TOKEN`, les enregistrements de l'admin s'écrivent
+directement dans les fichiers du projet (pratique pour tester).
+
+## Modifier le contenu à la main
 
 Tout le contenu courant se trouve dans `src/data/` et `src/content/`. Chaque fichier est commenté.
 
 | Je veux…                                   | Fichier à modifier |
 |--------------------------------------------|--------------------|
-| Saisir un score, ajouter un match          | `src/data/matches.ts` |
+| Saisir un score, ajouter un match          | `src/data/matches.json` (ou l'espace admin) |
 | Publier une actualité                      | nouveau fichier dans `src/content/actualites/` |
 | Ajouter un joueur seniors                  | `src/data/players.ts` + photo dans `src/assets/joueurs/` |
 | Changer un horaire, un encadrant           | `src/data/teams.ts` |
@@ -37,10 +68,10 @@ Tout le contenu courant se trouve dans `src/data/` et `src/content/`. Chaque fic
 
 ### Saisir un résultat
 
-Dans `src/data/matches.ts`, ajouter le score au match joué (`[domicile, extérieur]`) :
+Dans `src/data/matches.json`, ajouter le score au match joué (`[domicile, extérieur]`) :
 
-```ts
-{ round: 2, home: 'arboisPoligny', away: 'morez', date: '2026-09-20', time: '14h00', score: [25, 31] },
+```json
+{ "round": 2, "home": "arbois-poligny", "away": "morez", "date": "2026-09-20", "time": "14h00", "score": [25, 31] },
 ```
 
 Le match passe automatiquement en « Dernier résultat » (avec Victoire / Défaite / Nul), et le suivant
@@ -67,7 +98,11 @@ Les articles sont triés par `date`, le plus récent en premier (la date n'est p
 
 ## Héberger le site
 
-Après `npm run build`, il suffit de copier le contenu du dossier `dist/` chez un hébergeur.
+Le site est actuellement hébergé sur **Vercel**, qui le republie à chaque modification du dépôt.
+
+Hors espace admin, le site est entièrement statique. Sur un autre hébergeur, retirer l'adaptateur Vercel de
+`astro.config.mjs` : `npm run build` produit alors un dossier `dist/` à copier tel quel (l'espace admin demande
+en revanche un hébergeur capable d'exécuter les routes `/api/admin/*`, comme Vercel, Netlify ou un serveur Node).
 
 **Gratuit, sans serveur à gérer** (recommandé) : Cloudflare Pages, Netlify ou GitHub Pages.
 On relie le dépôt GitHub, on indique la commande `npm run build` et le dossier `dist`, et le site

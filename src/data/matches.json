@@ -1,0 +1,19 @@
+{
+  "clubs": {
+    "morez": { "name": "HB Morez Haut Jura", "logo": "morez.jpg" },
+    "arbois-poligny": { "name": "HB Arbois Poligny (B)", "logo": "arbois-poligny.png" },
+    "varois-arc": { "name": "HBC Varois-Arc (B)", "logo": "varois-arc.webp" },
+    "etoile-auxonnaise": { "name": "Etoile Auxonnaise HB", "logo": "etoile-auxonnaise.jpg" },
+    "longvic": { "name": "ALC Longvic (C)", "logo": "longvic.png" },
+    "saint-vit": { "name": "US Saint Vit HB", "logo": "saint-vit.jpg" },
+    "seurre": { "name": "JL Seurre", "logo": "seurre.webp" }
+  },
+  "matches": [
+    { "round": 1, "home": "morez", "away": "varois-arc", "date": "2026-09-12", "time": "21h00", "score": [44, 24] },
+    { "round": 2, "home": "arbois-poligny", "away": "morez", "date": "2026-09-20", "time": "14h00" },
+    { "round": 3, "home": "morez", "away": "etoile-auxonnaise", "date": "2026-09-26", "time": "20h00" },
+    { "round": 4, "home": "longvic", "away": "morez", "date": "2026-10-03", "time": "20h00" },
+    { "round": 5, "home": "morez", "away": "saint-vit" },
+    { "round": 6, "home": "seurre", "away": "morez" }
+  ]
+}

@@ -1,0 +1,191 @@
+---
+import AdminLayout from '@/layouts/AdminLayout.astro'
+import Icon from '@/components/Icon.astro'
+
+const categories = ['Match', 'Mercato', 'Préparation', 'École de hand', 'Vie du club', 'Partenaires', 'Événement']
+---
+<AdminLayout title="Publier une actualité">
+  <h1 class="text-4xl uppercase">Publier une actualité</h1>
+  <div class="gold-rule mt-4 w-20"></div>
+  <p class="mt-4 text-muted-foreground">Remplissez les champs : la mise en page est faite automatiquement. L'article apparaîtra <strong class="text-foreground">en tête</strong> de la page Actualités et sur l'accueil.</p>
+
+  <div class="mt-8 grid gap-8 lg:grid-cols-[1fr_20rem]">
+    <form class="space-y-5" data-article-form novalidate>
+      <div class="grid gap-5 sm:grid-cols-[1fr_12rem]">
+        <label class="admin-field">
+          <span class="admin-label">Titre *</span>
+          <input class="admin-input" name="title" maxlength="120" required placeholder="Une victoire maîtrisée, 44-24" />
+        </label>
+        <label class="admin-field">
+          <span class="admin-label">Catégorie *</span>
+          <input class="admin-input" name="category" list="categories" maxlength="40" required value="Match" />
+          <datalist id="categories">{categories.map(c => <option value={c} />)}</datalist>
+        </label>
+      </div>
+
+      <label class="admin-field">
+        <span class="admin-label">Résumé * <span class="normal-case tracking-normal text-muted-foreground/70">(affiché sur les cartes, 1 à 2 phrases)</span></span>
+        <textarea class="admin-input" name="excerpt" rows="2" maxlength="300" required placeholder="Une rencontre maîtrisée de bout en bout…"></textarea>
+        <span class="mt-1 block text-right text-xs text-muted-foreground" data-count>0 / 300</span>
+      </label>
+
+      <div class="admin-field">
+        <span class="admin-label">Photo *</span>
+        <div class="admin-dropzone min-h-44 p-6" tabindex="0" role="button" aria-label="Choisir ou glisser une photo" data-photo-zone>
+          <div class="flex flex-col items-center gap-2" data-zone-empty>
+            <Icon name="images" class="h-8 w-8 text-gold" />
+            <span><strong class="text-foreground">Glissez une photo ici</strong> ou cliquez pour la choisir</span>
+            <span class="text-xs">JPEG, PNG… elle sera réduite automatiquement</span>
+          </div>
+          <div class="hidden flex-col items-center gap-2" data-zone-filled>
+            <img alt="" class="max-h-44 object-contain" data-zone-image />
+            <span class="text-xs">Cliquez ou glissez une autre photo pour la remplacer</span>
+          </div>
+        </div>
+      </div>
+
+      <label class="admin-field">
+        <span class="admin-label">Texte de l'article *</span>
+        <textarea class="admin-input leading-relaxed" name="text" rows="12" required placeholder={"Chaque ligne devient un paragraphe.\n\nPour mettre en gras : **texte**\nPour un lien : [texte du lien](https://…)"}></textarea>
+        <span class="mt-1 block text-xs text-muted-foreground">Chaque retour à la ligne crée un nouveau paragraphe. Gras : <code>**texte**</code> · Lien : <code>[texte](https://…)</code></span>
+      </label>
+
+      <label class="admin-field">
+        <span class="admin-label">Description de la photo <span class="normal-case tracking-normal text-muted-foreground/70">(facultatif, pour l'accessibilité)</span></span>
+        <input class="admin-input" name="imageAlt" maxlength="160" placeholder="L'équipe seniors après la victoire" />
+      </label>
+
+      <p class="hidden text-sm text-red-400" data-error role="alert"></p>
+      <button class="admin-btn" type="submit" data-submit>Publier l'article <Icon name="arrow-right" /></button>
+    </form>
+
+    <!-- Aperçu en direct, identique à la carte du site -->
+    <aside>
+      <p class="admin-label">Aperçu sur le site</p>
+      <div class="surface-card overflow-hidden lg:sticky lg:top-6">
+        <div class="grid aspect-[4/5] place-items-center overflow-hidden bg-ink text-sm text-muted-foreground" data-preview-image>Photo</div>
+        <div class="p-6">
+          <p class="text-xs uppercase tracking-[0.28em] text-gold" data-preview-category>Match</p>
+          <h3 class="mt-2 text-xl uppercase leading-tight" data-preview-title>Titre de l'article</h3>
+          <p class="mt-3 line-clamp-3 text-sm text-muted-foreground" data-preview-excerpt>Résumé de l'article.</p>
+          <span class="mt-5 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-gold">Lire l'actualité <Icon name="arrow-right" /></span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="mt-16">
+    <h2 class="text-3xl uppercase">Articles publiés</h2>
+    <div class="gold-rule mt-4 w-20"></div>
+    <p class="mt-4 text-sm text-muted-foreground">Du plus récent au plus ancien, comme sur le site.</p>
+    <ul class="mt-6 divide-y divide-border border-y border-border" data-list>
+      <li class="py-4 text-sm text-muted-foreground">Chargement…</li>
+    </ul>
+  </section>
+</AdminLayout>
+
+<script>
+  import { api, dropzone, escapeHtml, requireSession, resizeImage, toast } from '@/scripts/admin'
+
+  const form = document.querySelector<HTMLFormElement>('[data-article-form]')!
+  const errorEl = document.querySelector<HTMLElement>('[data-error]')!
+  const zone = document.querySelector<HTMLElement>('[data-photo-zone]')!
+  const list = document.querySelector<HTMLElement>('[data-list]')!
+  const preview = {
+    image: document.querySelector<HTMLElement>('[data-preview-image]')!,
+    category: document.querySelector<HTMLElement>('[data-preview-category]')!,
+    title: document.querySelector<HTMLElement>('[data-preview-title]')!,
+    excerpt: document.querySelector<HTMLElement>('[data-preview-excerpt]')!,
+  }
+  let image: string | null = null
+
+  function setImage(dataUrl: string | null) {
+    image = dataUrl
+    zone.querySelector('[data-zone-empty]')!.classList.toggle('hidden', Boolean(dataUrl))
+    zone.querySelector('[data-zone-filled]')!.classList.toggle('hidden', !dataUrl)
+    zone.querySelector('[data-zone-filled]')!.classList.toggle('flex', Boolean(dataUrl))
+    if (dataUrl) {
+      zone.querySelector<HTMLImageElement>('[data-zone-image]')!.src = dataUrl
+      preview.image.innerHTML = `<img src="${dataUrl}" alt="" class="h-full w-full object-contain" />`
+    } else {
+      preview.image.textContent = 'Photo'
+    }
+  }
+
+  function field(name: string) {
+    return form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement
+  }
+
+  function updatePreview() {
+    preview.category.textContent = field('category').value || 'Catégorie'
+    preview.title.textContent = field('title').value || "Titre de l'article"
+    preview.excerpt.textContent = field('excerpt').value || "Résumé de l'article."
+    document.querySelector('[data-count]')!.textContent = `${field('excerpt').value.length} / 300`
+  }
+  form.addEventListener('input', updatePreview)
+
+  dropzone(zone, async file => {
+    try {
+      setImage(await resizeImage(file, 1600, 'image/jpeg'))
+    } catch (e) {
+      toast(e instanceof Error ? e.message : String(e), 'error')
+    }
+  })
+
+  async function loadList() {
+    const { articles } = await api<{ articles: { slug: string; title: string; category: string; date: string }[] }>('articles')
+    list.innerHTML = articles.map(a => `
+      <li class="flex flex-wrap items-center justify-between gap-3 py-4">
+        <div class="min-w-0">
+          <p class="text-xs uppercase tracking-[0.2em] text-gold">${escapeHtml(a.category)} · ${a.date ? new Date(a.date).toLocaleDateString('fr-FR') : ''}</p>
+          <a href="/actualites/${a.slug}/" target="_blank" class="font-display text-xl uppercase hover:text-gold">${escapeHtml(a.title)}</a>
+        </div>
+        <button type="button" class="admin-btn-ghost" data-delete="${a.slug}" data-title="${escapeHtml(a.title)}">Supprimer</button>
+      </li>`).join('') || '<li class="py-4 text-sm text-muted-foreground">Aucun article.</li>'
+  }
+
+  list.addEventListener('click', async e => {
+    const button = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-delete]')
+    if (!button || !confirm(`Supprimer définitivement « ${button.dataset.title} » ?`)) return
+    button.disabled = true
+    try {
+      await api(`articles?slug=${encodeURIComponent(button.dataset.delete!)}`, { method: 'DELETE' })
+      toast('Article supprimé. Le site sera à jour dans 1 à 2 minutes.')
+      await loadList()
+    } catch (err) {
+      toast(err instanceof Error ? err.message : String(err), 'error')
+      button.disabled = false
+    }
+  })
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault()
+    errorEl.classList.add('hidden')
+    const missing = ['title', 'category', 'excerpt', 'text'].filter(n => !field(n).value.trim())
+    if (missing.length || !image) {
+      errorEl.textContent = !image && !missing.length ? 'Ajoutez une photo.' : 'Remplissez tous les champs marqués d’une *.'
+      errorEl.classList.remove('hidden')
+      return
+    }
+    const submit = form.querySelector<HTMLButtonElement>('[data-submit]')!
+    submit.disabled = true
+    submit.firstChild!.textContent = 'Publication… '
+    try {
+      const data = Object.fromEntries(new FormData(form))
+      const { url } = await api<{ url: string }>('articles', { method: 'POST', body: JSON.stringify({ ...data, image }) })
+      toast(`Article publié ! Il sera en ligne dans 1 à 2 minutes : ${location.origin}${url}`)
+      form.reset()
+      setImage(null)
+      updatePreview()
+      await loadList()
+    } catch (err) {
+      errorEl.textContent = err instanceof Error ? err.message : String(err)
+      errorEl.classList.remove('hidden')
+    } finally {
+      submit.disabled = false
+      submit.firstChild!.textContent = "Publier l'article "
+    }
+  })
+
+  requireSession().then(loadList)
+</script>

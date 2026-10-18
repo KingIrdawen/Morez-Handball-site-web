@@ -1,0 +1,82 @@
+---
+import '@/styles/global.css'
+import { Image } from 'astro:assets'
+import logo from '@/assets/club/logo.jpg'
+
+interface Props {
+  title: string
+  public?: boolean // page de connexion : affichée sans attendre la vérification de session
+}
+const { title, public: isPublic = false } = Astro.props
+const path = Astro.url.pathname
+const links = [
+  { href: '/admin/actualites/', label: 'Actualités' },
+  { href: '/admin/matchs/', label: 'Matchs' },
+]
+---
+<!doctype html>
+<html lang="fr" class:list={[isPublic && 'admin-ready']}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} — Admin Morez Handball</title>
+  </head>
+  <body class="min-h-screen bg-background">
+    <header class="border-b border-border bg-ink">
+      <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <a href="/admin/" class="flex items-center gap-3">
+          <Image src={logo} alt="" width={80} height={80} class="h-10 w-10" />
+          <span class="leading-none">
+            <span class="block font-display text-xl uppercase">Espace admin</span>
+            <span class="mt-1 block text-[0.62rem] font-semibold uppercase tracking-[0.3em] text-gold">Morez Handball</span>
+          </span>
+        </a>
+        {!isPublic && (
+          <nav class="flex flex-wrap items-center gap-5 text-sm font-semibold uppercase tracking-wide">
+            {links.map(l => <a href={l.href} class:list={['hover:text-gold', path.startsWith(l.href) ? 'text-gold' : 'text-foreground/80']}>{l.label}</a>)}
+            <a href="/" target="_blank" class="text-foreground/80 hover:text-gold">Voir le site ↗</a>
+            <button type="button" data-logout class="border border-border px-3 py-1.5 text-xs text-muted-foreground hover:border-gold hover:text-gold">Déconnexion</button>
+          </nav>
+        )}
+      </div>
+    </header>
+    <main class="admin-main mx-auto max-w-5xl px-4 py-10 sm:px-6">
+      <slot />
+    </main>
+
+    <script>
+      import { api } from '@/scripts/admin'
+      document.querySelector('[data-logout]')?.addEventListener('click', async () => {
+        await api('logout', { method: 'POST' }).catch(() => null)
+        location.href = '/admin/'
+      })
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  /* Contenu masqué tant que la session n'est pas vérifiée (évite d'afficher un formulaire inutilisable) */
+  html:not(.admin-ready) .admin-main { visibility: hidden; }
+
+  .admin-field { display: block; }
+  .admin-label { display: block; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted-foreground); margin-bottom: 0.4rem; }
+  .admin-input {
+    width: 100%; background: var(--color-ink); border: 1px solid var(--color-border); color: var(--color-foreground);
+    padding: 0.65rem 0.8rem; font-size: 0.95rem;
+  }
+  .admin-input:focus { outline: none; border-color: var(--color-gold); }
+  .admin-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--color-gold); color: var(--color-ink); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.8rem 1.4rem; }
+  .admin-btn:disabled { opacity: 0.5; cursor: wait; }
+  .admin-btn-ghost { display: inline-flex; align-items: center; gap: 0.4rem; border: 1px solid color-mix(in oklab, var(--color-gold) 50%, transparent); color: var(--color-gold); font-weight: 700; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.04em; padding: 0.55rem 0.9rem; }
+  .admin-dropzone {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; text-align: center;
+    border: 2px dashed color-mix(in oklab, var(--color-gold) 35%, transparent); background: var(--color-ink);
+    color: var(--color-muted-foreground); cursor: pointer; transition: border-color 0.15s, background 0.15s;
+  }
+  .admin-dropzone:hover, .admin-dropzone.is-dragover { border-color: var(--color-gold); background: color-mix(in oklab, var(--color-gold) 8%, var(--color-ink)); }
+  .admin-toast {
+    position: fixed; right: 1rem; bottom: 1rem; z-index: 60; max-width: 26rem; padding: 0.9rem 1.1rem;
+    background: var(--color-card); border-width: 1px; border-style: solid; box-shadow: 0 20px 50px rgb(0 0 0 / 0.5);
+  }
+</style>

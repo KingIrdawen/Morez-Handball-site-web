@@ -1,0 +1,355 @@
+---
+import { getImage } from 'astro:assets'
+import type { ImageMetadata } from 'astro'
+import AdminLayout from '@/layouts/AdminLayout.astro'
+import Icon from '@/components/Icon.astro'
+
+// Adresse des logos déjà présents sur le site, par nom de fichier (pour les afficher dans l'éditeur)
+const files = import.meta.glob<{ default: ImageMetadata }>('/src/assets/clubs/*.{png,jpg,jpeg,webp}', { eager: true })
+const logoUrls: Record<string, string> = {}
+for (const [path, mod] of Object.entries(files)) {
+  logoUrls[path.split('/').pop()!] = (await getImage({ src: mod.default, width: 96, format: 'webp' })).src
+}
+---
+<AdminLayout title="Matchs et résultats">
+  <h1 class="text-4xl uppercase">Matchs et résultats</h1>
+  <div class="gold-rule mt-4 w-20"></div>
+  <p class="mt-4 text-muted-foreground">
+    Saisissez un score pour annoncer un résultat, ajoutez les prochains matchs, puis cliquez sur <strong class="text-foreground">Enregistrer</strong>.
+    La page Matchs et l'accueil se mettent en page tout seuls.
+  </p>
+
+  <!-- Ce que le site affichera -->
+  <div class="surface-card mt-8 grid gap-4 p-5 text-sm sm:grid-cols-2" data-summary></div>
+
+  <!-- Clubs -->
+  <section class="mt-12">
+    <h2 class="text-3xl uppercase">Clubs</h2>
+    <p class="mt-2 text-sm text-muted-foreground">
+      <strong class="text-foreground">Glissez un logo</strong> sur un match pour choisir l'équipe.
+      Glissez une image sur un club pour changer son logo.
+    </p>
+    <div class="mt-5 flex flex-wrap gap-3" data-clubs></div>
+
+    <div class="surface-card mt-5 grid items-end gap-4 p-5 sm:grid-cols-[1fr_14rem_auto]">
+      <label class="admin-field">
+        <span class="admin-label">Nouveau club</span>
+        <input class="admin-input" maxlength="80" placeholder="Nom du club, ex. HBC Dole (B)" data-new-club-name />
+      </label>
+      <div class="admin-dropzone h-[46px] px-3 text-xs" tabindex="0" role="button" aria-label="Logo du nouveau club" data-new-club-logo>
+        <span data-new-club-logo-label>Glissez le logo ici</span>
+      </div>
+      <button type="button" class="admin-btn-ghost h-[46px]" data-add-club>Ajouter le club</button>
+    </div>
+  </section>
+
+  <!-- Matchs -->
+  <section class="mt-12 pb-28">
+    <h2 class="text-3xl uppercase">Calendrier</h2>
+    <p class="mt-2 text-sm text-muted-foreground">Laissez le score vide pour un match à venir. Sans date, le site affiche « Date à venir ».</p>
+    <div class="mt-5 space-y-4" data-matches></div>
+    <button type="button" class="admin-btn-ghost mt-5" data-add-match>+ Ajouter un match</button>
+  </section>
+
+  <!-- Barre d'enregistrement -->
+  <div class="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-ink/95 backdrop-blur">
+    <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+      <p class="text-sm text-muted-foreground" data-status>Aucune modification.</p>
+      <button type="button" class="admin-btn" data-save disabled>Enregistrer</button>
+    </div>
+  </div>
+
+  <script type="application/json" id="logo-urls" set:html={JSON.stringify(logoUrls)} />
+</AdminLayout>
+
+<script>
+  import { api, dropzone, escapeHtml, requireSession, resizeImage, toast } from '@/scripts/admin'
+
+  interface Club { name: string; logo: string }
+  interface Match { round: number; home: string; away: string; date?: string; time?: string; score?: [number, number] }
+  interface Data { clubs: Record<string, Club>; matches: Match[] }
+
+  const logoUrls: Record<string, string> = JSON.parse(document.getElementById('logo-urls')!.textContent!)
+  const pendingLogos = new Map<string, string>() // club → image glissée, pas encore enregistrée
+  let data: Data = { clubs: {}, matches: [] }
+  let dirty = false
+
+  const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!
+  const clubsEl = $('[data-clubs]')
+  const matchesEl = $('[data-matches]')
+  const statusEl = $('[data-status]')
+  const saveBtn = $<HTMLButtonElement>('[data-save]')
+
+  // ---------- Affichage ----------
+
+  function logoHtml(key: string, size = 'h-10 w-10') {
+    const club = data.clubs[key]
+    const src = pendingLogos.get(key) ?? (club && logoUrls[club.logo])
+    const inner = src
+      ? `<img src="${src}" alt="" class="h-full w-full object-contain" />`
+      : `<span class="font-display text-sm text-gold">${escapeHtml((club?.name ?? '?').slice(0, 2))}</span>`
+    return `<span class="grid ${size} shrink-0 place-items-center overflow-hidden rounded-full bg-background p-1 ring-1 ring-gold/25">${inner}</span>`
+  }
+
+  function outcome(m: Match) {
+    if (!m.score) return 'À venir'
+    const morez = m.home === 'morez' ? m.score[0] : m.score[1]
+    const other = m.home === 'morez' ? m.score[1] : m.score[0]
+    return morez > other ? 'Victoire' : morez < other ? 'Défaite' : 'Nul'
+  }
+
+  const label = (m: Match) => `J${m.round} · ${data.clubs[m.home]?.name ?? '?'} – ${data.clubs[m.away]?.name ?? '?'}`
+
+  function renderSummary() {
+    const sorted = [...data.matches].sort((a, b) => a.round - b.round)
+    const last = sorted.filter(m => m.score).at(-1)
+    const next = sorted.find(m => !m.score)
+    $('[data-summary]').innerHTML = `
+      <div><p class="admin-label">Dernier résultat sur le site</p><p>${last ? `${escapeHtml(label(last))} · <strong class="text-gold">${last.score![0]} – ${last.score![1]}</strong> (${outcome(last)})` : '—'}</p></div>
+      <div><p class="admin-label">Prochain match sur le site</p><p>${next ? escapeHtml(label(next)) + (next.date ? ` · ${new Date(next.date + 'T12:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}` : ' · date à venir') : '—'}</p></div>`
+  }
+
+  function renderClubs() {
+    const used = new Set(data.matches.flatMap(m => [m.home, m.away]))
+    clubsEl.innerHTML = Object.entries(data.clubs).map(([key, club]) => `
+      <div class="surface-card flex cursor-grab items-center gap-2.5 py-2 pr-2 pl-2.5 active:cursor-grabbing" draggable="true" data-club="${key}" title="Glissez sur un match">
+        ${logoHtml(key)}
+        <span class="max-w-44 truncate font-display text-lg uppercase">${escapeHtml(club.name)}</span>
+        ${key !== 'morez' && !used.has(key) ? `<button type="button" class="px-1 text-muted-foreground hover:text-red-400" data-remove-club="${key}" aria-label="Retirer ${escapeHtml(club.name)}">×</button>` : ''}
+      </div>`).join('')
+  }
+
+  function sideHtml(m: Match, i: number, side: 'home' | 'away') {
+    const options = Object.entries(data.clubs).map(([k, c]) => `<option value="${k}" ${k === m[side] ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')
+    return `
+      <div class="flex min-w-0 flex-1 items-center gap-2.5 border border-dashed border-transparent p-1.5 transition-colors" data-slot="${i}:${side}">
+        ${logoHtml(m[side], 'h-12 w-12')}
+        <label class="min-w-0 flex-1">
+          <span class="admin-label !mb-1">${side === 'home' ? 'Domicile' : 'Extérieur'}</span>
+          <select class="admin-input !py-2" data-field="${side}" data-i="${i}">${options}</select>
+        </label>
+      </div>`
+  }
+
+  function renderMatches() {
+    data.matches.sort((a, b) => a.round - b.round)
+    matchesEl.innerHTML = data.matches.map((m, i) => `
+      <article class="surface-card p-5" data-match="${i}">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <label class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-gold">
+            Journée <input type="number" min="1" max="99" value="${m.round}" class="admin-input !w-20 !py-1.5" data-field="round" data-i="${i}" />
+          </label>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${m.score ? 'bg-gold text-ink' : 'border border-gold/50 text-gold'}" data-outcome="${i}">${outcome(m)}</span>
+            <button type="button" class="admin-btn-ghost !px-2.5 !py-1.5" data-swap="${i}" title="Inverser domicile / extérieur">⇄</button>
+            <button type="button" class="admin-btn-ghost !border-red-500/40 !px-2.5 !py-1.5 !text-red-400" data-delete="${i}">Supprimer</button>
+          </div>
+        </div>
+        <div class="mt-4 flex flex-col gap-3 md:flex-row md:items-end">
+          ${sideHtml(m, i, 'home')}
+          <span class="self-center font-display text-2xl text-gold">VS</span>
+          ${sideHtml(m, i, 'away')}
+        </div>
+        <div class="mt-4 grid gap-4 sm:grid-cols-3">
+          <label class="admin-field"><span class="admin-label">Date</span><input type="date" class="admin-input" value="${m.date ?? ''}" data-field="date" data-i="${i}" /></label>
+          <label class="admin-field"><span class="admin-label">Heure</span><input type="time" class="admin-input" value="${m.time ? m.time.replace('h', ':').padStart(5, '0') : ''}" data-field="time" data-i="${i}" /></label>
+          <div class="admin-field">
+            <span class="admin-label">Score (dom. – ext.)</span>
+            <div class="flex items-center gap-2">
+              <input type="number" min="0" max="199" inputmode="numeric" class="admin-input text-center" value="${m.score?.[0] ?? ''}" data-field="score0" data-i="${i}" aria-label="Score domicile" />
+              <span class="text-gold">–</span>
+              <input type="number" min="0" max="199" inputmode="numeric" class="admin-input text-center" value="${m.score?.[1] ?? ''}" data-field="score1" data-i="${i}" aria-label="Score extérieur" />
+            </div>
+          </div>
+        </div>
+      </article>`).join('')
+  }
+
+  function render() {
+    renderSummary()
+    renderClubs()
+    renderMatches()
+  }
+
+  function markDirty() {
+    dirty = true
+    saveBtn.disabled = false
+    statusEl.textContent = 'Modifications non enregistrées.'
+    statusEl.className = 'text-sm text-gold'
+    renderSummary()
+  }
+
+  // ---------- Saisie ----------
+
+  matchesEl.addEventListener('input', e => {
+    const el = e.target as HTMLInputElement
+    const i = Number(el.dataset.i)
+    const m = data.matches[i]
+    if (!m) return
+    switch (el.dataset.field) {
+      case 'round': m.round = Math.max(1, Number(el.value) || 1); break
+      case 'date': el.value ? (m.date = el.value) : delete m.date; break
+      case 'time': el.value ? (m.time = el.value.replace(':', 'h')) : delete m.time; break
+      case 'score0': case 'score1': {
+        const card = el.closest('[data-match]')!
+        const a = card.querySelector<HTMLInputElement>('[data-field="score0"]')!.value
+        const b = card.querySelector<HTMLInputElement>('[data-field="score1"]')!.value
+        if (a !== '' && b !== '') m.score = [Number(a), Number(b)]
+        else delete m.score
+        const badge = card.querySelector<HTMLElement>(`[data-outcome="${i}"]`)!
+        badge.textContent = outcome(m)
+        badge.className = `px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${m.score ? 'bg-gold text-ink' : 'border border-gold/50 text-gold'}`
+        break
+      }
+    }
+    markDirty()
+  })
+
+  matchesEl.addEventListener('change', e => {
+    const el = e.target as HTMLSelectElement
+    const field = el.dataset.field
+    if (field === 'home' || field === 'away') {
+      data.matches[Number(el.dataset.i)][field] = el.value
+      markDirty(); render()
+    }
+    if (field === 'round') { markDirty(); render() } // re-trie par journée
+  })
+
+  matchesEl.addEventListener('click', e => {
+    const target = e.target as HTMLElement
+    const swap = target.closest<HTMLElement>('[data-swap]')
+    const del = target.closest<HTMLElement>('[data-delete]')
+    if (swap) {
+      const m = data.matches[Number(swap.dataset.swap)]
+      ;[m.home, m.away] = [m.away, m.home]
+      if (m.score) m.score = [m.score[1], m.score[0]]
+      markDirty(); render()
+    }
+    if (del) {
+      const m = data.matches[Number(del.dataset.delete)]
+      if (!confirm(`Supprimer le match ${label(m)} ?`)) return
+      data.matches.splice(Number(del.dataset.delete), 1)
+      markDirty(); render()
+    }
+  })
+
+  $('[data-add-match]').addEventListener('click', () => {
+    const round = Math.max(0, ...data.matches.map(m => m.round)) + 1
+    const opponent = Object.keys(data.clubs).find(k => k !== 'morez') ?? 'morez'
+    data.matches.push({ round, home: 'morez', away: opponent })
+    markDirty(); render()
+    matchesEl.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  })
+
+  // ---------- Glisser-déposer des logos ----------
+
+  clubsEl.addEventListener('dragstart', e => {
+    const chip = (e.target as HTMLElement).closest<HTMLElement>('[data-club]')
+    if (chip) e.dataTransfer!.setData('text/club', chip.dataset.club!)
+  })
+
+  // Un club glissé sur un côté d'un match
+  matchesEl.addEventListener('dragover', e => {
+    const slot = (e.target as HTMLElement).closest<HTMLElement>('[data-slot]')
+    if (slot && e.dataTransfer?.types.includes('text/club')) {
+      e.preventDefault()
+      slot.classList.add('!border-gold', 'bg-gold/5')
+    }
+  })
+  matchesEl.addEventListener('dragleave', e => {
+    (e.target as HTMLElement).closest<HTMLElement>('[data-slot]')?.classList.remove('!border-gold', 'bg-gold/5')
+  })
+  matchesEl.addEventListener('drop', e => {
+    const slot = (e.target as HTMLElement).closest<HTMLElement>('[data-slot]')
+    const club = e.dataTransfer?.getData('text/club')
+    if (!slot || !club) return
+    e.preventDefault()
+    const [i, side] = slot.dataset.slot!.split(':') as [string, 'home' | 'away']
+    data.matches[Number(i)][side] = club
+    markDirty(); render()
+  })
+
+  // Une image glissée sur un club : nouveau logo
+  clubsEl.addEventListener('dragover', e => { if (e.dataTransfer?.types.includes('Files')) e.preventDefault() })
+  clubsEl.addEventListener('drop', async e => {
+    const chip = (e.target as HTMLElement).closest<HTMLElement>('[data-club]')
+    const file = e.dataTransfer?.files[0]
+    if (!chip || !file) return
+    e.preventDefault()
+    try {
+      pendingLogos.set(chip.dataset.club!, await resizeImage(file, 400, 'image/webp', 0.9))
+      markDirty(); render()
+    } catch (err) { toast(err instanceof Error ? err.message : String(err), 'error') }
+  })
+
+  clubsEl.addEventListener('click', e => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-remove-club]')
+    if (!btn) return
+    delete data.clubs[btn.dataset.removeClub!]
+    pendingLogos.delete(btn.dataset.removeClub!)
+    markDirty(); render()
+  })
+
+  // ---------- Nouveau club ----------
+
+  let newLogo: string | null = null
+  dropzone($('[data-new-club-logo]'), async file => {
+    try {
+      newLogo = await resizeImage(file, 400, 'image/webp', 0.9)
+      $('[data-new-club-logo-label]').innerHTML = `<img src="${newLogo}" alt="" class="h-8 w-8 object-contain" /> Logo prêt`
+    } catch (err) { toast(err instanceof Error ? err.message : String(err), 'error') }
+  })
+
+  const slug = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50)
+
+  $('[data-add-club]').addEventListener('click', () => {
+    const input = $<HTMLInputElement>('[data-new-club-name]')
+    const name = input.value.trim()
+    if (!name) return toast('Indiquez le nom du club.', 'error')
+    if (!newLogo) return toast('Glissez le logo du club.', 'error')
+    let key = slug(name) || 'club'
+    for (let n = 2; data.clubs[key]; n++) key = `${slug(name)}-${n}`
+    data.clubs[key] = { name, logo: `${key}.webp` }
+    pendingLogos.set(key, newLogo)
+    newLogo = null
+    input.value = ''
+    $('[data-new-club-logo-label]').textContent = 'Glissez le logo ici'
+    markDirty(); render()
+    toast(`${name} ajouté : glissez son logo sur un match.`)
+  })
+
+  // ---------- Enregistrement ----------
+
+  saveBtn.addEventListener('click', async () => {
+    saveBtn.disabled = true
+    saveBtn.textContent = 'Enregistrement…'
+    try {
+      const logos = [...pendingLogos].filter(([key]) => data.clubs[key]).map(([key, image]) => ({ key, image }))
+      const res = await api<{ data: Data }>('matches', { method: 'PUT', body: JSON.stringify({ data, logos }) })
+      // Les nouveaux logos gardent leur aperçu local jusqu'à la prochaine publication du site
+      for (const [key, image] of pendingLogos) {
+        const file = res.data.clubs[key]?.logo
+        if (file) logoUrls[file] = image
+      }
+      pendingLogos.clear()
+      data = res.data
+      dirty = false
+      render()
+      statusEl.textContent = 'Enregistré ✓ — le site sera à jour dans 1 à 2 minutes.'
+      statusEl.className = 'text-sm text-muted-foreground'
+      toast('Calendrier enregistré. Le site sera à jour dans 1 à 2 minutes.')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : String(err), 'error')
+      saveBtn.disabled = false
+    } finally {
+      saveBtn.textContent = 'Enregistrer'
+    }
+  })
+
+  window.addEventListener('beforeunload', e => { if (dirty) e.preventDefault() })
+
+  requireSession()
+    .then(() => api<Data>('matches'))
+    .then(d => { data = d; render() })
+    .catch(err => toast(err instanceof Error ? err.message : String(err), 'error'))
+</script>
